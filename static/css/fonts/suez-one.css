@@ -1,0 +1,12 @@
+/* Suez One - Local font for offline use */
+/* Source: Google Fonts - https://fonts.google.com/specimen/Suez+One */
+/* License: SIL Open Font License 1.1 */
+
+@font-face {
+    font-family: 'Suez One';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('suez-one.woff2') format('woff2'),
+         url('suez-one.woff2') format('truetype');
+}

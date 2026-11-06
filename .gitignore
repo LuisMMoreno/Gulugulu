@@ -1,0 +1,48 @@
+# Entorno virtual y Python
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+.Python
+
+# Distribucion fisica portable y ejecutables
+USB/
+*.exe
+build/
+dist/
+*.spec
+
+# Backups y archivos temporales generados
+backups/*.db
+backups/*.zip
+cookies*.txt
+scratch/
+
+# Entornos y metadatos de agentes locales
+.agent/
+.agents/
+.claude/
+.playwright-mcp/
+.vscode/
+.idea/
+
+# Pruebas y cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Archivos del sistema operativo
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+*.swp
+*~
+

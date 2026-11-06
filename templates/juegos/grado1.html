@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minijuegos - Gulugulu 🐧</title>
+    <link rel="icon" href="/static/images/icono.png" type="image/png">
+    <link href="/static/css/fonts/plus-jakarta-sans.css" rel="stylesheet" />
+    <link href="/static/css/fonts/suez-one.css" rel="stylesheet" />
+    <script src="/static/js/lucide/lucide.js"></script>
+    <script src="/static/js/vue.global.js"></script>
+
+    <style>
+        /* ============ BASE ============ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --gulu: #5A9AB5;
+            --gulu-dark: #2C4A58;
+            --gulu-l: #E8F4FA;
+            --gulu-accent: #6366f1;
+            --text-main: #1A2E35;
+            --card-glass: rgba(255, 255, 255, 0.85);
+            --header-glass: rgba(255, 255, 255, 0.7);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #f8fbff;
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* ============ BACKGROUND ============ */
+        .bg-container {
+            position: fixed;
+            inset: 0;
+            z-index: -3;
+            overflow: hidden;
+        }
+
+        .bg-webp {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        .bg-blur-gradient {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 100%);
+            pointer-events: none;
+        }
+
+        /* ============ HEADER ============ */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 12px 24px;
+            
+            background: var(--header-glass);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            font-family: 'Suez One', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--gulu-dark, #2C4A58);
+            line-height: 1;
+            letter-spacing: 0;
+            transition: opacity 0.15s ease;
+        }
+        .logo:hover { opacity: 0.9; }
+        .logo span {
+            font-family: 'Suez One', serif;
+            font-size: inherit;
+            color: inherit;
+            letter-spacing: inherit;
+        }
+
+        .logo:hover {
+            transform: scale(1.02);
+        }
+
+        
+
+        .logo span {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--gulu), var(--gulu-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 14px;
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--gulu-dark);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.4);
+            
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .header-link:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+            border-color: var(--gulu);
+        }
+
+        /* ============ GAME UI ============ */
+        #game-app {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-glass);
+            
+            padding: 20px 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            margin-bottom: 40px;
+        }
+
+        .level-info h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #0056D2;
+            margin-bottom: 4px;
+        }
+
+        .level-info p {
+            font-size: 1rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: #fff;
+            padding: 10px 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            border: 2px solid #e2e8f0;
+        }
+
+        .stat-box.highlight {
+            border-color: #3B82F6;
+            background: #EFF6FF;
+            min-width: 100px;
+        }
+
+        .stat-box span {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-box strong {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .game-canvas {
+            background: var(--card-glass);
+            
+            border-radius: 30px;
+            padding: 50px;
+            min-height: 500px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prompt-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #111827;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .btn-option {
+            padding: 20px 40px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: #fff;
+            border: 4px solid #CBD5E1;
+            border-radius: 20px;
+            color: var(--text-main);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-option.large-text {
+            font-size: 4rem;
+            width: 120px;
+            height: 120px;
+        }
+
+        .btn-option:hover {
+            transform: translateY(-5px);
+            border-color: #3B82F6;
+            box-shadow: 0 15px 25px rgba(59, 130, 246, 0.2);
+            color: #3B82F6;
+        }
+
+        .options-row {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* GAME 1: MEMORIA CLASSES */
+        .memory-board {
+            display: grid;
+            gap: 16px;
+            perspective: 1000px;
+            grid-template-columns: repeat(4, 90px);
+        }
+
+        .card-container {
+            width: 100%;
+            aspect-ratio: 1/1;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .card-container.flipped .card-inner,
+        .card-container.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 4px solid #fff;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: #fff;
+            transform: rotateY(0deg);
+        }
+
+        .card-front::after {
+            content: '?';
+            font-size: 3rem;
+            font-weight: 800;
+            opacity: 0.5;
+        }
+
+        .card-back {
+            background: #fff;
+            transform: rotateY(180deg);
+        }
+
+        .card-icon {
+            font-size: 3.5rem !important;
+        }
+
+        .card-container.matched .card-face {
+            border-color: #10B981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* GAME 2: BUBBLES */
+        .bubble-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 600px;
+        }
+
+        .bubble {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fff, #93C5FD);
+            box-shadow: inset -10px -10px 20px rgba(59, 130, 246, 0.2), 0 10px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1E3A8A;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            animation: float 3s ease-in-out infinite alternate;
+        }
+
+        .bubble:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes float {
+            from {
+                transform: translateY(5px);
+            }
+
+            to {
+                transform: translateY(-15px);
+            }
+        }
+
+        /* GAME 3/4: ICONS ROW */
+        .icons-display {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            font-size: 4rem;
+            color: #F59E0B;
+        }
+
+        .math-expr {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 40px;
+            color: #111827;
+        }
+
+        /* GAME 5: ALPHABET */
+        .alpha-grid {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-alpha {
+            width: 90px;
+            height: 90px;
+            border-radius: 20px;
+            font-size: 3rem;
+            font-weight: 800;
+            border: 4px solid #E2E8F0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-alpha.correct {
+            background: #10B981;
+            color: white;
+            border-color: #059669;
+            pointer-events: none;
+        }
+
+        /* GAME 6: SHAPES */
+        .target-shape {
+            font-size: 8rem;
+            color: #1e293b;
+            margin-bottom: 40px;
+            filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.1));
+        }
+
+        /* GAME 7: WORD */
+        .word-display {
+            font-size: 5rem;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            margin-bottom: 40px;
+            color: #0056D2;
+        }
+
+        .blinking-cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* GAME 8: COLORS */
+        .color-prompt {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .btn-color {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-color:hover {
+            transform: scale(1.1);
+        }
+
+        /* GAME 10: SEQUENCE */
+        .sequence-display {
+            display: flex;
+            gap: 20px;
+            font-size: 5rem;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .seq-box {
+            background: #fff;
+            border: 4px dashed #CBD5E1;
+            border-radius: 20px;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94A3B8;
+            font-size: 3rem;
+        }
+
+        /* ============ MODAL ============ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 50px 40px;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            position: relative;
+            animation: popIn .25s cubic-bezier(.34,1.56,.64,1) both;
+        }
+
+        .modal-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #F59E0B, #FCD34D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-content h2 {
+            font-size: 2.5rem;
+            color: #111827;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        .modal-content p {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 36px;
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 800;
+            border: none;
+            border-radius: 99px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(37, 99, 235, 0.4);
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.2s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(.85) translateY(20px); }
+            to   { opacity: 1; transform: scale(1)  translateY(0); }
+        }
+        @keyframes shake-anim {
+            0%,100% { transform: translateX(0); }
+            20%     { transform: translateX(-8px); }
+            40%     { transform: translateX(8px); }
+            60%     { transform: translateX(-6px); }
+            80%     { transform: translateX(6px); }
+        }
+        .shake-anim { animation: shake-anim .35s ease; }
+    
+        @media (max-width: 768px) {
+            .hide-mobile {
+                display: none;
+            }
+        }
+        [v-cloak] {
+            display: none !important;
+        }
+</style>
+    <script src="/static/js/fullscreen.js"></script>
+</head>
+
+<body>
+    <div class="bg-container" style="background: #f0f4f8;"><img src="/static/videos/fondo.webp" alt="" class="bg-webp" aria-hidden="true" loading="eager" /></div>
+    <div class="bg-blur-gradient"></div>
+
+    <header class="header">
+
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <button onclick="toggleFullScreen()" class="header-link" style="cursor: pointer; font-family: inherit; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0, 0, 0, 0.05);">
+                <span id="fullscreenIcon" data-lucide="maximize-2" data-size="18" data-stroke-width="2"></span>
+                <span id="fullscreenText" class="hide-mobile">Pantalla Completa</span>
+            </button>
+<a href="/" class="logo"><span>Gulugulu</span></a>
+        <a href="/minijuegos" class="header-link">
+            <span data-lucide="arrow-left" data-size="18" data-stroke-width="2"></span>
+            Grados
+        </a>
+        </div>
+    </header>
+
+    <div id="game-app" v-cloak>
+        <div class="game-top-bar" v-if="config">
+            <div class="level-info">
+                <h1>[[ config.title ]]</h1>
+                <p>Juego [[ gameId ]] de 20 • Primer Grado</p>
+            </div>
+            <div class="stats">
+                <div class="stat-box" v-if="config.showScore">
+                    <span>Puntos</span>
+                    <strong>[[ score ]]/[[ config.maxScore ]]</strong>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="game-canvas" id="canvas-area">
+
+            <!-- GAME 1: MEMORIA -->
+            <template v-if="gameId === 1">
+                <div class="prompt-text">Encuentra las parejas</div>
+                <div class="memory-board">
+                    <div class="card-container" v-for="(card, i) in g.cards" :key="card.id"
+                        :class="{ flipped: card.isFlipped, matched: card.isMatched }" @click="pG1(i)">
+                        <div class="card-inner">
+                            <div class="card-face card-front"></div>
+                            <div class="card-face card-back"><span class="card-icon"
+                                    v-html="GIconEngine.html(card.icon, { size: 48, color: card.color })"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- GAME 2: CAZA VOCALES -->
+            <template v-if="gameId === 2">
+                <div class="prompt-text">¡Atrapa solo las vocales!</div>
+                <div class="bubble-grid">
+                    <div class="bubble" v-for="b in g.bubbles" :key="b.id" v-show="!b.popped"
+                        @click="pG2(b, $event)" :style="{ animationDelay: b.delay }">
+                        [[ b.letter ]]
+                    </div>
+                </div>
+            </template>
+
+            <!-- GAME 3: CONTANDO -->
+            <template v-if="gameId === 3">
+                <div class="prompt-text">¿Cuántos perritos hay?</div>
+                <div class="icons-display">
+                    <span v-for="i in g.count" :key="i" v-html="GIconEngine.html('dog', { size: 64 })"></span>
+                </div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="opt in g.options" :key="opt"
+                        @click="pG3(opt, $event)">[[ opt ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 4: SUMA -->
+            <template v-if="gameId === 4">
+                <div class="prompt-text">¿Cuánto es la suma?</div>
+                <div class="math-expr">
+                    <div style="display:flex;gap:5px"><span v-for="i in g.n1" :key="'a'+i" v-html="GIconEngine.html('apple', { size: 48 })"></span></div>
+                    <span>+</span>
+                    <div style="display:flex;gap:5px"><span v-for="i in g.n2" :key="'b'+i" v-html="GIconEngine.html('apple', { size: 48 })"></span></div>
+                    <span>=</span>
+                    <span v-html="GIconEngine.html('question', { size: 48 })"></span>
+                </div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="opt in g.options" :key="opt"
+                        @click="pG4(opt, $event)">[[ opt ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 5: ABECEDARIO -->
+            <template v-if="gameId === 5">
+                <div class="prompt-text">Toca las letras en orden (A, B, C...)</div>
+                <div class="alpha-grid">
+                    <button class="btn-alpha" v-for="btn in g.buttons" :key="btn.char"
+                        :class="{ correct: btn.correct }" @click="pG5(btn, $event)">
+                        [[ btn.char ]]
+                    </button>
+                </div>
+            </template>
+
+            <!-- GAME 6: FORMAS -->
+            <template v-if="gameId === 6">
+                <div class="prompt-text">¿Qué forma es esta?</div>
+                <span class="target-shape" v-html="GIconEngine.html(g.targetIcon, { size: 120 })"></span>
+                <div class="options-row">
+                    <button class="btn-option" v-for="opt in g.options" :key="opt.icon" @click="pG6(opt, $event)">
+                        <span v-html="GIconEngine.html(opt.icon, { size: 64 })"></span>
+                    </button>
+                </div>
+            </template>
+
+            <!-- GAME 7: PALABRA -->
+            <template v-if="gameId === 7">
+                <div class="prompt-text">Completa la palabra</div>
+                <div v-html="GIconEngine.html('dog', { size: 120 })" style="margin-bottom:20px;"></div>
+                <div class="word-display">P <span class="blinking-cursor">_</span> R R O</div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="v in ['A', 'E', 'I', 'O', 'U']" :key="v"
+                        @click="pG7(v, $event)">[[ v ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 8: COLORES -->
+            <template v-if="gameId === 8">
+                <div class="prompt-text">Toca el color:</div>
+                <div class="color-prompt" :style="{color: '#111827'}">[[ g.targetName ]]</div>
+                <div class="options-row">
+                    <div class="btn-color" v-for="c in g.colors" :key="c.hex" :style="{ backgroundColor: c.hex }"
+                        @click="pG8(c, $event)"></div>
+                </div>
+            </template>
+
+            <!-- GAME 9: MAYOR/MENOR -->
+            <template v-if="gameId === 9">
+                <div class="prompt-text">¿Qué número es MAYOR?</div>
+                <div class="options-row" style="gap: 60px;">
+                    <button class="btn-option large-text" @click="pG9(g.n1, $event)">[[ g.n1 ]]</button>
+                    <button class="btn-option large-text" @click="pG9(g.n2, $event)">[[ g.n2 ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 10: PATRONES -->
+            <template v-if="gameId === 10">
+                <div class="prompt-text">¿Qué figura sigue?</div>
+                <div class="sequence-display">
+                    <span v-for="(ico, i) in g.seq" :key="i" v-html="GIconEngine.html(ico, { size: 64 })"></span>
+                    <div class="seq-box">?</div>
+                </div>
+                <div class="options-row">
+                    <button class="btn-option" v-for="opt in g.options" :key="opt" @click="pG10(opt, $event)">
+                        <span v-html="GIconEngine.html(opt, { size: 64 })"></span>
+                    </button>
+                </div>
+            </template>
+
+            <!-- GAME 11: SUCESIÓN -->
+            <template v-if="gameId === 11">
+                <div class="prompt-text">¿Qué número falta?</div>
+                <div class="sequence-display">
+                    <span v-for="n in g.seq" :key="n" class="seq-box" :style="{borderColor: '#3B82F6', color: n==='?' ? '#94A3B8' : '#111827'}">[[ n ]]</span>
+                </div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="opt in g.options" :key="opt" @click="pG11(opt, $event)">[[ opt ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 12: RESTA -->
+            <template v-if="gameId === 12">
+                <div class="prompt-text">¿Cuánto es la resta?</div>
+                <div class="math-expr">
+                    <div style="display:flex;gap:5px"><span v-for="i in g.n1" :key="'a'+i" v-html="GIconEngine.html('leaf', { size: 48 })"></span></div>
+                    <span>-</span>
+                    <div style="display:flex;gap:5px"><span v-for="i in g.n2" :key="'b'+i" v-html="GIconEngine.html('leaf', { size: 48, style: 'opacity:0.5' })"></span></div>
+                    <span>=</span>
+                    <span v-html="GIconEngine.html('question', { size: 48 })"></span>
+                </div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="opt in g.options" :key="opt" @click="pG12(opt, $event)">[[ opt ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 13: DIFERENTE -->
+            <template v-if="gameId === 13">
+                <div class="prompt-text">Encuentra el intruso</div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="(item, i) in g.options" :key="i" @click="pG13(item, $event)">
+                         <span v-html="GIconEngine.html(item.icon, { size: 64 })"></span>
+                    </button>
+                </div>
+            </template>
+
+            <!-- GAME 14: ORDENAR NÚMEROS -->
+            <template v-if="gameId === 14">
+                <div class="prompt-text">Toca los números en orden (1, 2, 3...)</div>
+                <div class="alpha-grid">
+                    <button class="btn-alpha" v-for="btn in g.buttons" :key="btn.num"
+                        :class="{ correct: btn.correct }" @click="pG14(btn, $event)">
+                        [[ btn.num ]]
+                    </button>
+                </div>
+            </template>
+
+            <!-- GAME 15: MAYÚSCULA/MINÚSCULA -->
+            <template v-if="gameId === 15">
+                <div class="prompt-text">Encuentra su minúscula</div>
+                <div class="target-shape" style="font-family: inherit; font-weight: 800; color: #3B82F6;">[[ g.target ]]</div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="opt in g.options" :key="opt" @click="pG15(opt, $event)">[[ opt ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 16: MÁS GRANDE -->
+            <template v-if="gameId === 16">
+                <div class="prompt-text">Toca la figura MÁS GRANDE</div>
+                <div class="options-row" style="align-items: center; gap: 50px;">
+                    <button class="btn-option" v-for="(opt, i) in g.options" :key="i" @click="pG16(i, $event)" style="border:none; box-shadow:none; background:transparent;">
+                        <svg viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="2" :style="{width: opt.size, height: opt.size}">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </template>
+
+            <!-- GAME 17: PALABRA 2 -->
+            <template v-if="gameId === 17">
+                <div class="prompt-text">Completa la palabra</div>
+                <div v-html="GIconEngine.html('heart', { size: 120 })" style="margin-bottom:20px;"></div>
+                <div class="word-display">A M <span class="blinking-cursor">_</span> R</div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="v in ['A', 'E', 'I', 'O', 'U']" :key="v" @click="pG17(v, $event)">[[ v ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 18: LADOS -->
+            <template v-if="gameId === 18">
+                <div class="prompt-text">¿Cuántos lados tiene un triángulo?</div>
+                <div v-html="GIconEngine.html('triangle', { size: 120 })" class="target-shape"></div>
+                <div class="options-row">
+                    <button class="btn-option large-text" v-for="opt in [2, 3, 4]" :key="opt" @click="pG18(opt, $event)">[[ opt ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 19: DIRECCIONES -->
+            <template v-if="gameId === 19">
+                <div class="prompt-text">¿Hacia dónde apunta la flecha?</div>
+                <div v-html="GIconEngine.html(g.targetIcon, { size: 140 })" class="target-shape"></div>
+                <div class="options-row">
+                    <button class="btn-option" style="font-size: 1.6rem; padding: 1rem 2.5rem;" v-for="opt in g.options" :key="opt.dir" @click="pG19(opt.dir, $event)">[[ opt.label ]]</button>
+                </div>
+            </template>
+
+            <!-- GAME 20: ATRAPA EL 10 -->
+            <template v-if="gameId === 20">
+                <div class="prompt-text">¡Atrapa los números 10!</div>
+                <div class="bubble-grid">
+                    <div class="bubble" v-for="b in g.bubbles" :key="b.id" v-show="!b.popped"
+                        @click="pG20(b, $event)" :style="{ animationDelay: b.delay, background: 'radial-gradient(circle at 30% 30%, #fff, #FCD34D)' }">
+                        [[ b.num ]]
+                    </div>
+                </div>
+            </template>
+
+        </div>
+
+        <!-- Victory/Failure Modal -->
+        <transition name="fade">
+            <div class="modal-overlay" v-if="gameWon || gameLost">
+                <div class="modal-content">
+                    <template v-if="gameWon">
+                        <span data-lucide="star" data-size="44" data-stroke-width="2" class="modal-icon" style="color: #F59E0B; fill: #F59E0B;"></span>
+                        <h2>[[ winMsg ]]</h2>
+                        <p v-if="gameId < 20">¡Buen trabajo completando el nivel!</p>
+                        <div v-else>
+                            <h2>¡Reto Completado! 🏆</h2>
+                            <p style="font-size: 1.5rem; margin: 20px 0;">Tu nota final es: <strong>[[ totalScore ]]/20</strong></p>
+                        </div>
+                        <a v-if="gameId < 20" :href="'/juego/1/' + (gameId + 1)" class="btn-primary">
+                            Siguiente Juego <span data-lucide="arrow-right" data-size="18" data-stroke-width="2"></span>
+                        </a>
+                        <a v-else href="/minijuegos" class="btn-primary">
+                            Completaste Todo <span data-lucide="check-circle-2" data-size="18" data-stroke-width="2"></span>
+                        </a>
+                    </template>
+                    <template v-else>
+                        <span data-lucide="alert-circle" data-size="44" data-stroke-width="2" class="modal-icon" style="color: #EF4444;"></span>
+                        <h2>[[ loseMsg ]]</h2>
+                        <p v-if="g.ans">La respuesta correcta era: <strong>[[ g.ans ]]</strong></p>
+                        <p v-else>No te preocupes, ¡sigue intentándolo!</p>
+
+                        <div v-if="gameId === 20" style="margin-top: 20px;">
+                            <h2>¡Reto Completado! 🏆</h2>
+                            <p style="font-size: 1.5rem; margin: 20px 0;">Tu nota final es: <strong>[[ totalScore ]]/20</strong></p>
+                        </div>
+
+                        <a v-if="gameId < 20" :href="'/juego/1/' + (gameId + 1)" class="btn-primary">
+                            Siguiente Juego <span data-lucide="arrow-right" data-size="18" data-stroke-width="2"></span>
+                        </a>
+                        <a v-else href="/minijuegos" class="btn-primary">
+                            Volver a Grados <span data-lucide="check-circle-2" data-size="18" data-stroke-width="2"></span>
+                        </a>
+                    </template>
+                </div>
+            </div>
+        </transition>
+    </div>
+
+    <!-- SERVER INJECTS LEVEL -->
+    <script>window.GAME_ID = {{ game_id|default (1) }};</script>
+<script src="/static/js/game-icons.js"></script>
+<script src="/static/js/juegos/grado1/{{ game_id|default(1) }}.js"></script>
+<script src="/static/js/juegos/grado1/engine.js"></script>
+</body>
+</html>
